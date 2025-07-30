@@ -13,10 +13,10 @@ from datetime import datetime, timedelta
 # Import cosmetic package(s)
 from faicons import icon_svg
 
-# Imoprt functions from custom scripts
+# Imoprt functions from src
 from config import uri
-from mongodb_data_read import *
-from makingplots import *
+from query import *
+from plots import *
 
 # Function that @reactive.poll() will use to check whether MongoDB has been updated
 def getDateTime():

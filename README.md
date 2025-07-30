@@ -9,6 +9,7 @@ This package is used to run the dashboard for SPOC aging &amp lifetime experimen
 * Real-time monitoring of measurements.
 * Graphing variable selection.
 * Defining X-axis min and max bounds for the graphs.
+* Switch between pages to monitor different graphs.
 * Status reports to flag if measurements are outside of defined bounds.
 
 *More features to be developed in the future*
@@ -31,7 +32,7 @@ A couple things needs to be modified in the scripts to suit the user's use case 
 
 2. Modify the database name to connect to in `app.py` to connect to the appropriate database.
 
-3. The `readData()` function  and `makingplots.py` is written with the assumption that the collection names reflect the actuator number in the experiment. Please feel free to edit the data processing steps to correctly reflect reading in unique actuator numbers.
+3. The `readData()` function in `query.py` and `plots.py` is written with the assumption that the collection names reflect the actuator number in the experiment. Please feel free to edit the data processing steps to correctly reflect reading in unique actuator numbers.
 
 *Activate .venv before launching the dashboard*
 
