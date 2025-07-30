@@ -29,7 +29,7 @@ def getDateTime():
         print(f"Error accessing Datetime: {e}")
         return None
 
-# Reads in the data from MongoDB reactively (CHANGE DB NAME)
+# Reads in the data from MongoDB reactively (CHANGE DB NAME or QUERY INTERVAL)
 @reactive.poll(poll_func = getDateTime, interval_secs = 20)
 def df():
     df = readData(uri,ServerApi('1'),"compression_synthetic")
