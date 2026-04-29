@@ -7,7 +7,9 @@ from pymongo.server_api import ServerApi
 
 
 
-# Returns a timestamp token so Shiny can poll for fresh MongoDB data.
+
+# Return the current timestamp for Shiny polling.
+# Used by reactive.poll to trigger periodic data refreshes.
 def getDateTime():
     try:
         now = datetime.now()
@@ -32,11 +34,20 @@ def parse_datetime_input(value):
     except Exception:
         return None
 
-# Expands quantity dict columns into separate value and unit columns.
+
 def flatten_quantities(df: pd.DataFrame) -> pd.DataFrame:
     """
-    If a column contains dicts like {"value": x, "unit": y},
-    convert to two columns: <col>_value and <col>_unit.
+    Expand dictionary-based quantity columns into separate value and unit columns.
+
+    Columns containing dictionaries like {"value": x, "unit": y} are split into:
+    - <column>_value
+    - <column>_unit
+
+    Args:
+        df (pd.DataFrame): Input dataframe possibly containing quantity dictionaries.
+
+    Returns:
+        pd.DataFrame: Modified dataframe with flattened quantity columns.
     """
     if df.empty:
         return df
@@ -66,8 +77,19 @@ def read_metadata_df(
     collectionName: str,
 ) -> pd.DataFrame:
     """
-    Read a metadata collection from MongoDB into a dataframe.
-    Flattens {value, unit} quantity fields into *_value / *_unit columns.
+    Read a metadata collection from MongoDB and return a cleaned dataframe.
+
+    Retrieves documents, removes MongoDB-specific fields, and flattens any
+    quantity columns into separate value and unit columns.
+
+    Args:
+        uri (str): MongoDB connection URI.
+        server_api (ServerApi): MongoDB ServerApi configuration.
+        dbName (str): Database name.
+        collectionName (str): Metadata collection name.
+
+    Returns:
+        pd.DataFrame: Cleaned and flattened metadata dataframe.
     """
     client = MongoClient(host=uri, server_api=server_api)
     db = client[dbName]
@@ -83,8 +105,25 @@ def read_metadata_df(
     return df
 
 
-# Computes per-batch summary metrics and status flags from part metadata.
 def compute_batch_summary(parts_df: pd.DataFrame, batches_df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Compute per-batch summary statistics and status flags.
+
+    Aggregates part-level metadata into batch-level metrics such as:
+    - Number of parts
+    - Average thickness
+    - Average curing temperature
+    - Optional averages (strain, test duration)
+
+    Also generates simple warning flags based on predefined thresholds.
+
+    Args:
+        parts_df (pd.DataFrame): Part-level metadata dataframe.
+        batches_df (pd.DataFrame): Batch-level metadata dataframe.
+
+    Returns:
+        pd.DataFrame: Batch-level summary dataframe with metrics and status flags.
+    """
     parts = parts_df.copy()
     batches = batches_df.copy()
 
@@ -136,8 +175,20 @@ def compute_batch_summary(parts_df: pd.DataFrame, batches_df: pd.DataFrame) -> p
     return summary
 
 
-# Computes top-level dashboard summary values across parts and batches.
 def compute_overall_summary(parts_df: pd.DataFrame, batches_df: pd.DataFrame, batch_summary: pd.DataFrame) -> dict:
+    """
+    Compute overall dashboard summary metrics across all parts and batches.
+
+    Includes total counts, most common polymer type, and average thickness.
+
+    Args:
+        parts_df (pd.DataFrame): Part metadata dataframe.
+        batches_df (pd.DataFrame): Batch metadata dataframe.
+        batch_summary (pd.DataFrame): Precomputed batch summary dataframe.
+
+    Returns:
+        dict: Dictionary of summary metrics for display in dashboard tiles.
+    """
     out = {
         "total_parts": int(parts_df["PartID"].nunique()) if "PartID" in parts_df.columns else 0,
         "total_batches": int(batches_df["BatchID"].nunique()) if "BatchID" in batches_df.columns else 0,
@@ -156,8 +207,16 @@ def compute_overall_summary(parts_df: pd.DataFrame, batches_df: pd.DataFrame, ba
 
     return out
 
-# Helper function to translate the selected y metric: Given a metric key, return the corresponding configuration for metadata display
 def get_metadata_metric_config(metric_key: str):
+    """
+    Map a selected metric key to its plotting configuration.
+
+    Args:
+        metric_key (str): Selected metric identifier from UI.
+
+    Returns:
+        dict | None: Configuration dictionary for the metric, or None if invalid.
+    """
     metric_map = {
         "avg_thickness": {
             "source_col": "PartThickness_value",

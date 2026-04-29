@@ -1,3 +1,16 @@
+"""
+Shiny dashboard application for monitoring compression testing data.
+
+This app connects to MongoDB to:
+- Display real-time actuator data (torque, force, position)
+- Provide interactive filtering and visualization
+- Show batch and part metadata summaries and comparisons
+
+The dashboard consists of two main tabs:
+1. Real-time Monitoring
+2. Metadata Analysis
+"""
+
 # Import Libraries ----------------------
 # Import Shiny & MongoDB
 from shiny.express import input, render, ui, app, module
@@ -28,6 +41,15 @@ from utils import *
 # Polls MongoDB for the latest timeseries data.
 @reactive.poll(poll_func = getDateTime, interval_secs = 20)
 def df():
+    """
+    Poll MongoDB for updated timeseries data.
+
+    This reactive function refreshes the dataset every 20 seconds
+    to keep the real-time dashboard up to date.
+
+    Returns:
+        pd.DataFrame: Latest timeseries data formatted for plotting.
+    """
     #df = readData(uri,ServerApi('1'),"compression_synthetic")
     df = readData(uri,ServerApi('1'),"Compression-SPOC-Project", "compression-set-timeseries")
     return df
@@ -251,10 +273,14 @@ with ui.navset_card_tab(id="tabs"):
             if current_page_val() < total_pages:
                 current_page_val.set(current_page_val() + 1)
 
-        # Selects the actuator IDs shown on the current page.
         @reactive.calc
         def current_graphs():
-            """Get the 6 graphs for the current page"""
+            """
+            Determine which actuator IDs should be displayed on the current page.
+
+            Returns:
+                list: Subset of actuator IDs for the current page.
+            """
             start_idx = (current_page() - 1) * 6
             end_idx = current_page() * 6
             return actuator_list[start_idx:end_idx]
@@ -263,10 +289,15 @@ with ui.navset_card_tab(id="tabs"):
         time_window_mode = reactive.value("live_1h")
 
 
-        # Applies the chosen time window to the plots.
         @reactive.effect
         @reactive.event(input.apply_time_window)
         def apply_time_window():
+            """
+            Update the active time window based on user input.
+
+            Supports predefined ranges (e.g., last 15 min, 1 hour) and
+            custom start/end datetime values.
+            """
             selected = input.time_window()
 
             if selected == "custom":
@@ -282,9 +313,14 @@ with ui.navset_card_tab(id="tabs"):
             time_window_mode.set(selected)
 
 
-        # Computes the active x-axis bounds for the charts.
         @reactive.calc
         def current_bounds():
+            """
+            Compute the active x-axis time range for plots.
+
+            Returns:
+                dict: Dictionary with minX and maxX timestamps.
+            """
             current_data = df()
 
             if len(current_data) == 0:
@@ -399,9 +435,20 @@ with ui.navset_card_tab(id="tabs"):
                             fig = create_graph(data = df(), actuator = graphs[5], yVar1 = input.y_var(), yVar2 = input.y_var2(), xMin = bounds['minX'], xMax = bounds['maxX'])
                         return fig
                     
-        # Helper function to create value box content -- current threshold are hardcoded
-        # Builds the status boxes for one actuator.
         def get_value_box_content(actuator_index):
+            """
+            Build status value boxes for a specific actuator.
+
+            Retrieves the most recent data point for the selected actuator,
+            compares it against predefined thresholds, and returns styled
+            UI boxes indicating whether values are within acceptable bounds.
+
+            Args:
+                actuator_index (int): Index of actuator on the current page.
+
+            Returns:
+                Tag: Shiny UI container with value boxes.
+            """
             y1Interval = {'y1Min': -150, 'y1Max': 150}
             y2Interval = {'y2Min': -800, 'y2Max': 1200}
             intervals = {'y1Interval': y1Interval, 'y2Interval': y2Interval}
@@ -493,6 +540,15 @@ with ui.navset_card_tab(id="tabs"):
 
         @reactive.calc
         def filtered_metadata_df():
+            """
+            Apply user-selected filters to the metadata dataframe.
+
+            Filters include batch ID, part ID, curing type, part shape,
+            and polymer type.
+
+            Returns:
+                pd.DataFrame: Filtered metadata dataframe.
+            """
             df = merged_metadata_df().copy()
 
             if df.empty:
@@ -576,7 +632,8 @@ with ui.navset_card_tab(id="tabs"):
 
             return parts
         
-        
+
+        # Resets all metadata filter inputs to their default (empty) state.
         @reactive.effect
         @reactive.event(input.reset_metadata_filters)
         def _reset_metadata_filters():
@@ -638,6 +695,15 @@ with ui.navset_card_tab(id="tabs"):
 
                 @render.plot(height=800)
                 def metadata_comparison_plot():
+                    """
+                    Render a bar chart comparing metadata metrics across groups.
+
+                    Groups data by a selected category (e.g., BatchID, PolymerType)
+                    and computes the selected metric (e.g., average thickness).
+
+                    Returns:
+                        matplotlib.figure.Figure: Generated bar chart.
+                    """
                     df = metadata_plot_df().copy()
                     group_col = input.metadata_group_by()
                     metric_key = input.metadata_y_metric()

@@ -11,7 +11,23 @@ from faicons import icon_svg
 
 def create_graph(data, actuator, yVar1, yVar2, xMin, xMax):
     """
-    Create a time series plot for a given actuator using DateTime as the x-axis.
+    Create a dual-axis time series plot for one actuator.
+
+    Filters the input dataframe to the selected actuator, converts DateTime
+    values to pandas timestamps, and plots two selected measurement columns
+    against time. If no data is available, the function returns a placeholder
+    plot instead of failing.
+
+    Args:
+        data (pd.DataFrame): Timeseries dataframe containing actuator data.
+        actuator (str): Actuator ID to filter and plot.
+        yVar1 (str): First measurement column to plot on the left y-axis.
+        yVar2 (str): Second measurement column to plot on the right y-axis.
+        xMin (datetime | pd.Timestamp | None): Minimum x-axis time bound.
+        xMax (datetime | pd.Timestamp | None): Maximum x-axis time bound.
+
+    Returns:
+        matplotlib.figure.Figure: Matplotlib figure containing the generated plot.
     """
     df = data[data["actuatorNumber"] == actuator].copy()
 
@@ -59,13 +75,30 @@ def create_graph(data, actuator, yVar1, yVar2, xMin, xMax):
 
 # Helper function to create flagging boxes
 def create_flagging_boxes(recentData, flagIntervals, variables, actuatorid):
-    
+    """
+    Create status value boxes for the most recent actuator readings.
+
+    Compares the latest y1 and y2 values against accepted min/max intervals,
+    then builds Shiny value boxes with success or warning icons depending on
+    whether each value is inside the accepted range.
+
+    Args:
+        recentData (dict): Latest actuator values with keys y1Data and y2Data.
+        flagIntervals (dict): Accepted min/max intervals for y1 and y2 values.
+        variables (dict): Display names for the selected y-axis variables.
+        actuatorid (str): Actuator ID shown in the value box titles.
+
+    Returns:
+        list: Shiny value box UI elements for y1 and y2 status.
+    """
+    # Check whether each latest value is inside its accepted interval.    
     def intervalStatus(data, intervals):
         statuses = {}
         statuses['y1Status'] = intervals['y1Interval']['y1Min'] <= data['y1Data'] <= intervals['y1Interval']['y1Max']
         statuses['y2Status'] = intervals['y2Interval']['y2Min'] <= data['y2Data'] <= intervals['y2Interval']['y2Max']
         return statuses
     
+    # Choose success or warning icons based on interval status.
     def get_icons(data, intervals):
         icons = {}
         statuses = intervalStatus(data, intervals)
@@ -73,6 +106,7 @@ def create_flagging_boxes(recentData, flagIntervals, variables, actuatorid):
         icons['y2Icon'] = icon_svg("circle-check").add_class("text-success") if statuses['y2Status'] else icon_svg("triangle-exclamation").add_class("text-danger")
         return icons
     
+    # Create human-readable status text for each selected variable.
     def get_bottom_text(data, intervals):
         texts = {}
         statuses = intervalStatus(data, intervals)
@@ -80,6 +114,7 @@ def create_flagging_boxes(recentData, flagIntervals, variables, actuatorid):
         texts['y2BotText'] = 'Within Accepted Bounds' if statuses['y2Status'] else 'WARNING: OUTSIDE ACCEPTED BOUNDS'
         return texts
     
+    # Choose value box color themes based on interval status.
     def get_themes(data, intervals):
         themes = {}
         statuses = intervalStatus(data, intervals)
@@ -109,8 +144,22 @@ def create_flagging_boxes(recentData, flagIntervals, variables, actuatorid):
     ]
 
 
-# builds styled tile UI elements for summary stats
 def summary_tile(title: str, value: str, subtitle: str = "", bg: str = "#f5f5f5"):
+    """
+    Build a styled Shiny UI tile for displaying a summary statistic.
+
+    Used by the metadata tab to show compact dashboard values such as total
+    parts, total batches, most common polymer, and average thickness.
+
+    Args:
+        title (str): Label shown at the top of the tile.
+        value (str): Main value displayed prominently in the tile.
+        subtitle (str): Optional smaller text shown below the main value.
+        bg (str): Background color for the tile.
+
+    Returns:
+        Tag: Shiny UI div containing the formatted summary tile.
+    """
     return ui.div(
         {
             "style": (

@@ -11,8 +11,21 @@ def readData(
     collectionName: str = "compression-set-timeseries",
 ) -> pd.DataFrame:
     """
-    Read one timeseries collection and return a dataframe compatible with app.py.
-    Uses fixed-schema transforms for the real-time dashboard.
+    Read timeseries data from MongoDB and format it for the Shiny dashboard.
+
+    This function pulls documents from a MongoDB collection, flattens the nested
+    metadata fields, cleans and sorts the DateTime column, and creates a new
+    dataframe with the column names expected by app.py.
+
+    Args:
+        uri (str): MongoDB connection URI.
+        server_api (ServerApi): MongoDB ServerApi object used when creating the client.
+        dbName (str): Name of the MongoDB database to read from.
+        collectionName (str): Name of the MongoDB collection to read from.
+
+    Returns:
+        pd.DataFrame: Formatted dataframe containing timeseries data, actuator IDs,
+        batch IDs, part IDs, and dashboard-ready measurement columns.
     """
     client = MongoClient(host=uri, server_api=server_api)
     db = client[dbName]
@@ -59,6 +72,7 @@ def readData(
     newdf["Position (MachineCount)"] = pd.to_numeric(
         df["PLC_axis1_cyberPtPAxis_PositionActual_Value"], errors="coerce"
     )
+    # Convert machine count position into millimeters.
     newdf["Position (mm)"] = (newdf["Position (MachineCount)"] / 65536) * 3
     newdf["Torque"] = pd.to_numeric(
         df["PLC_axis1_cyberPtPAxis_TorqueActual_Value"], errors="coerce"
@@ -67,6 +81,7 @@ def readData(
         df["PLC_axis1_Axis1_Force_Lb_Value"], errors="coerce"
     )
 
+    # Preserve original IDs so the dashboard can filter and group by actuator, batch, and part.
     newdf["actuatorID"] = df["actuatorID"].astype(str)
     newdf["batchID"] = df["batchID"].astype(str)
     newdf["partID"] = df["partID"].astype(str)
