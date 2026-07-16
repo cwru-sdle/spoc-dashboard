@@ -11,6 +11,7 @@ This package is used to run the dashboard for SPOC aging &amp lifetime experimen
 * Defining X-axis min and max bounds for the graphs.
 * Switch between pages to monitor different graphs.
 * Status reports to flag if measurements are outside of defined bounds.
+* Viewing Metadata 
 
 *More features to be developed in the future*
 
@@ -26,7 +27,7 @@ pip install -r requirements.txt
 
 A couple things needs to be modified in the scripts to suit the user's use case before launching the dashboard. 
 
-1. Create a `.env` file insice `\src` directory to store your MongoDB API key or edit the path to your API key in `config.py`.
+1. Create a `.env` file insice `./src` directory to store your MongoDB API key or edit the path to your API key in `config.py`.
 
     * **DO NOT** write the api key in `config.py` or any other scripts.
 
