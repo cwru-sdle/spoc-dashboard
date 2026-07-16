@@ -1,16 +1,3 @@
-"""
-Shiny dashboard application for monitoring compression testing data.
-
-This app connects to MongoDB to:
-- Display real-time actuator data (torque, force, position)
-- Provide interactive filtering and visualization
-- Show batch and part metadata summaries and comparisons
-
-The dashboard consists of two main tabs:
-1. Real-time Monitoring
-2. Metadata Analysis
-"""
-
 # Import Libraries ----------------------
 # Import Shiny & MongoDB
 from shiny.express import input, render, ui, app, module
@@ -34,10 +21,6 @@ from query import *
 from plots import *
 from utils import *
 
-
-
-
-
 # Polls MongoDB for the latest timeseries data.
 @reactive.poll(poll_func = getDateTime, interval_secs = 20)
 def df():
@@ -53,9 +36,6 @@ def df():
     #df = readData(uri,ServerApi('1'),"compression_synthetic")
     df = readData(uri,ServerApi('1'),"Compression-SPOC-Project", "compression-set-timeseries")
     return df
-
-
-
 
 # Global Settings ---------------------------
 # (CHANGE DB NAME)
@@ -81,8 +61,7 @@ batch_metadata_df = read_metadata_df(
     uri, ServerApi("1"), "Compression-SPOC-Project", "batch-metadata"
 )
 
-
-# SHINY DASHBOARD STARTS HERE -----------------------------
+# SHINY DASHBOARD UI STARTS HERE -----------------------------
 
 # Sets the graphs to fill up the entire page on the dashboard
 ui.page_opts(fillable=True)
@@ -127,8 +106,6 @@ with ui.sidebar():
         ui.input_text("start_time", "Start Time (YYYY-MM-DD HH:MM)", placeholder="YYYY-MM-DD HH:MM")
         ui.input_text("end_time", "End Time (YYYY-MM-DD HH:MM)", placeholder="YYYY-MM-DD HH:MM")
         ui.input_action_button("apply_time_window", "Apply Time Window", class_="btn-success")
-
-        
 
         ui.hr()
 

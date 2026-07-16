@@ -14,6 +14,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * **Fixed** for any bug fixes.
 * **Security** in case of vulnerabilities
 
+## [0.2.0] - 2026-07-16
+
+### Added
+
+* Added new features to the dashboard.
+    * Users are now able to view metadata information about their samples.
+    * Live monitoring view shows for 1 hr, with capability to select start and end times for viewing.
+* Updates to data query as we modified how collections on MongoDB are formatted.
+    * Collections now correspond to data source (metadata, timeseries, etc) instead of actuator data.
 
 ## [0.1.0] - 2025-07-30
 
